@@ -203,6 +203,26 @@ guessed. Load the resulting `data.csv` or `data.json` into your preferred
 analysis workflow. Unicode is preserved, and nested list/object values in CSV
 cells are compact JSON so they remain machine-readable.
 
+### Analyze a collection with Harken
+
+The optional Harken integration imports the collector's normalized JSON or JSONL into Harken's local SQLite database, then applies its local sentiment and theme analysis. The import leaves the original collection unchanged and deduplicates mentions using Harken's stable content IDs.
+
+Install the integration from this checkout:
+
+```bash
+uv pip install -e '.[harken]'
+```
+
+Import a collector export (use the same search phrase that produced the collection):
+
+```bash
+reverse-api-engineer harken import data.json --query "battery recycling"
+```
+
+By default, Harken's `HARKEN_DB` setting selects the database. Override it with `--db /path/to/harken.db`. The existing collector export remains unchanged. Harken stores one source-dependent `score`; the importer maps the first available score/upvote/like count there, while the source export retains every original engagement field.
+
+Harken's built-in sentiment lexicon is English-oriented; review Spanish-language sentiment results before relying on them.
+
 ## Caveats
 
 - Generated code runs locally via Claude Code, so review before executing.

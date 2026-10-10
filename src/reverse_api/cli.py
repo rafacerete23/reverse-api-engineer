@@ -1888,6 +1888,31 @@ def collector(prompt: str | None, model: str | None, output_dir: str | None) -> 
         sys.exit(1)
 
 
+@main.group("harken")
+def harken_group() -> None:
+    """Send collected social data to Harken for local analysis."""
+
+
+@harken_group.command("import")
+@click.argument("input_file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--query", required=True, help="Search term used to group these mentions in Harken.")
+@click.option("--db", "db_path", default=None, help="Harken SQLite path (defaults to HARKEN_DB).")
+def harken_import(input_file: Path, query: str, db_path: str | None) -> None:
+    """Import collector JSON/JSONL and calculate Harken sentiment and themes."""
+    from .harken_integration import import_collection
+
+    try:
+        result = import_collection(input_file, query, db_path)
+    except Exception as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(
+        f"Harken import complete: {result['new']} new, "
+        f"{result['imported']} valid, {result['skipped']} skipped."
+    )
+    click.echo(f"Database: {result['database']}")
+
+
 def run_manual_capture(
     prompt: str | None = None,
     url: str | None = None,
