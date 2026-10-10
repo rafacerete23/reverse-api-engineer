@@ -25,12 +25,20 @@ logging.getLogger("claude_agent_sdk").setLevel(logging.WARNING)
 logging.getLogger("claude_agent_sdk._internal.transport.subprocess_cli").setLevel(logging.WARNING)
 
 
-class Collector:
-    """AI-powered web data collector using Claude Agent SDK.
+def _serialize_csv_value(value: Any) -> str:
+    """Serialize cells without losing Unicode or nested JSON structure."""
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, tuple)):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return str(value)
 
-    Uses Claude's built-in tools (WebFetch, Write) to collect data.
-    The agent writes collected items to a JSONL file which is then
-    processed into JSON + CSV output.
+
+class Collector:
+    """AI-powered web and social collector using Claude Agent SDK.
+
+    Uses built-in web tools and installed Agent Reach CLIs where applicable.
+    The agent writes collected items to JSONL, which is exported as JSON + CSV.
     """
 
     def __init__(
@@ -206,7 +214,7 @@ class Collector:
         # Export JSON
         json_path = self._collected_dir / "data.json"
         with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(collected_items, f, indent=2)
+            json.dump(collected_items, f, indent=2, ensure_ascii=False)
 
         # Export CSV
         csv_path = self._collected_dir / "data.csv"
@@ -267,8 +275,9 @@ class Collector:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for item in items:
-                # Convert non-string values to strings, filter out keys not in fieldnames
-                row = {k: str(v) if v is not None else "" for k, v in item.items() if k in fieldnames}
+                # Keep nested values machine-readable so downstream tools can
+                # parse lists and objects from individual CSV cells.
+                row = {k: _serialize_csv_value(v) for k, v in item.items() if k in fieldnames}
                 writer.writerow(row)
 
     def _export_readme(self, readme_path: Path, items: list[dict[str, Any]], sources: set[str]) -> None:

@@ -73,7 +73,7 @@ Cycle modes with **Shift+Tab**:
 | `manual` | You drive the browser; AI generates the client from captured traffic. |
 | `agent` | An AI agent drives capture autonomously (Playwright or Chrome MCP, or Vercel agent-browser CLI). |
 | `engineer` | Re-run generation on a previous capture (`engineer <run_id>`). |
-| `collector` | Agent collects structured data (JSON/CSV) using web search + fetch. |
+| `collector` | Agent collects structured data (JSON/CSV) using web search, fetch, and available Agent Reach social connectors. |
 
 Agent mode providers:
 - **auto** (default): Playwright MCP, single workflow for browsing + reverse engineering.
@@ -180,6 +180,28 @@ concise by default, and `--json` / `--json-stream` stdout remains machine-readab
 - `~/.reverse-api/runs/scripts/{run_id}/`: permanent storage
 - `./scripts/{descriptive_name}/`: local copy with a readable name
 - Collector: `./collected/{folder_name}/` (`items.json`, `items.csv`, `README.md`)
+
+## Social research with Agent Reach
+
+The collector can use [Agent Reach](https://github.com/Panniantong/Agent-Reach)
+for read-only searches and collection from connected social platforms, then
+write comparable records to JSON and CSV for downstream analysis.
+
+```bash
+agent-reach doctor --json
+reverse-api-engineer collector -p "Search public posts about battery recycling on V2EX and Reddit from the past 30 days. Collect the post URL, author, text, date, and available engagement counts."
+```
+
+Connect the platforms you need in Agent Reach first. For browser-based
+connectors, install and connect the OpenCLI browser extension and sign in
+yourself in the browser. The collector will not log in, install connectors,
+configure cookies, or perform write actions. It saves a shared set of fields
+(`source_platform`, `content_id`, `source_url`, `author`, `content_text`,
+`created_at`, `collected_at`, and engagement counts) so results can be filtered
+and compared across platforms. Missing fields stay empty rather than being
+guessed. Load the resulting `data.csv` or `data.json` into your preferred
+analysis workflow. Unicode is preserved, and nested list/object values in CSV
+cells are compact JSON so they remain machine-readable.
 
 ## Caveats
 
